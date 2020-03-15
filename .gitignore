@@ -1,2 +1,6 @@
+*.cfg
 *.pyc
-__pycache__
+
+bin/
+lib/
+__pycache__/
