@@ -17,6 +17,7 @@ def returnCardNumberText(id):
     if num == 10: return "Queen"
     if num == 11: return "King"
     if num == 12: return "Ace"
+
 def returnCardNumberLetter(id):
     num = id % 13
     if num == 0: return "2"
@@ -32,22 +33,45 @@ def returnCardNumberLetter(id):
     if num == 10: return "Q"
     if num == 11: return "K"
     if num == 12: return "A"
+
 def returnCardSuit(id):
     suit = id // 13
-    if suit == 0: return "♠️Spades"
-    if suit == 1: return "♥️Hearts"
-    if suit == 2: return "♣️Clubs"
-    if suit == 3: return "♦️Diamonds"
+    if suit == 0: return 'S' #"Spades"
+    if suit == 1: return 'H' #"Hearts"
+    if suit == 2: return 'C' #"Clubs"
+    if suit == 3: return 'D' #"Diamonds"
+
 def returnCardString(id):
     result = []
     for i in id:
         result.append("%s of %s" % (returnCardNumberText(i),returnCardSuit(i)))
     return result
+
 def returnCardStringShort(id):
     result = []
     for i in id:
         result.append("%s%s" % (returnCardSuit(i)[0],returnCardNumberLetter(i)))
     return result
+
+def returnCardId(*names):
+    output = []
+    hand = names[0]
+    for n in hand:
+        num = 0
+        suit, value = n[0], n[1]
+        if suit == 'H': num += 13
+        if suit == 'C': num += 26
+        if suit == 'D': num += 39
+        if value.isnumeric(): 
+            num += int(value) - 2
+        else:
+            if value == 'J': num += 9
+            if value == 'Q': num += 10
+            if value == 'K': num += 11
+            if value == 'A': num += 12
+        output.append(num)
+    return output
+
 def returnHandName(score):
     if score == 0:
         return ("High Card")
@@ -68,7 +92,7 @@ def returnHandName(score):
     elif score == 8:
         return ("Straight Flush")
 
-'''STATCI Functions for checking hands'''
+'''STATIC functions for checking hands'''
 def returnHighCard(hand,num):
 
     newHand = list(map(lambda x: x % 13,hand))
@@ -82,12 +106,14 @@ def returnHighCard(hand,num):
             popped.append(index)
 
     return out
+
 def returnPair(hand):
     newHand = list(map(lambda x: x % 13,hand))
     for i in newHand:
         if newHand.count(i) >= 2: return (True,list(filter(lambda x: x%13 == i, hand)))
 
     return (False,0)
+
 def returnTwoPairs(hand):
     newHand = list(map(lambda x: x % 13,hand))
     pairs = []
@@ -101,12 +127,14 @@ def returnTwoPairs(hand):
         h2 = list(filter(lambda x: x%13 == pairs[1], hand))
         return (True, (h1+h2))
     return (False,0)
+
 def returnThreeOfAKind(hand):
     newHand = list(map(lambda x: x % 13,hand))
     for i in newHand:
         if newHand.count(i) >= 3: return (True,list(filter(lambda x: x%13 == i, hand)))
 
     return (False,0)
+
 def returnFullHouse(hand):
     if returnTwoPairs(hand)[0] and returnThreeOfAKind(hand)[0]:
         pair = list(set(returnTwoPairs(hand)[1]) - set(returnThreeOfAKind(hand)[1]))
@@ -114,12 +142,14 @@ def returnFullHouse(hand):
         return (True, (returnThreeOfAKind(hand)[1] + pair))
 
     return (False,0)
+
 def returnFourOfAKind(hand):
     newHand = list(map(lambda x: x % 13,hand))
     for i in newHand:
         if newHand.count(i) >= 4: return (True,list(filter(lambda x: x%13 == i, hand)))
 
     return (False,0)
+
 def returnFlush(hand):
     newHand = list(map(lambda x: x // 13,hand))
     out = []
@@ -132,6 +162,7 @@ def returnFlush(hand):
             return (True,out)
 
     return (False,0)
+
 def returnStraight(hand):
     newHand = []
     for h in hand:
@@ -154,6 +185,7 @@ def returnStraight(hand):
         return (True,[i[1] for i in out][:5])
 
     return (False,0)
+
 def returnStraightFlush(hand):
     newHand = hand
     spades = []
@@ -175,7 +207,7 @@ def returnStraightFlush(hand):
     return (False, 0)
 
 def returnHandScore(totalHand):
-    # returns ([bestHand], score)
+    '''Returns best 5 cards and hand score'''
     score = 0
     hand = []
     if returnStraightFlush(totalHand)[0] :
