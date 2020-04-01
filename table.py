@@ -45,39 +45,29 @@ class GameObject(object):
         
 
     def createSidePots(self, round_bet, in_play):
-        # Get lowest number x of round_bet[in_play_index]
-        # Create pot with (len(in_play) * x , in_play)
-        # Remove in_play_index from in_play
-        # Repeat until all round_bet values are the same
-        # Return all sidepots
-
-
-    
-
-        leftover_bets = sum([round_bet[x] for x in round_bet.keys if x not in in_play])
-        sidepot = []
+        pot = []
+        
         # Get all the bets of the in play players
         bets = [round_bet[x] for x in in_play]
 
-        last_pot_bet = min(bets)
-        pot = last_pot_bet * len(bets)
-        bets = [x - last_pot_bet for x in bets if x > last_pot_bet]
+        # While not all bets are equal
+        while (len(set(bets)) >= 1):
 
+            # Get lowest common bet
+            lowest_common_bet = min(bets)
 
-        # While their bets are not equal
-        while (len(set(bets)) != 1):
-            # Create sidepot for the smallest bet * no. of still in play players, eligible for the same group of players
-            sidepot.append((min(bets) * len(bets), [x for x in in_play if round_bet[x] >= min(bets)]))
+            # Get bets from folded player that are up for grabs this turn
+            leftover_bets = lowest_common_bet * len([x for x in round_bet.keys() if x not in in_play and round_bet[x] >= lowest_common_bet])
+            pot.append((leftover_bets + lowest_common_bet * len(in_play), in_play))
+
 
             # Update the remainging bets to be subtracted from the sidepot that was just generated
             # And add them to the next sidepot generation only if they are greater than the one just now
-            bets = [round_bet[x] - min(bets) for x in in_play if round_bet[x] > min(bets)]
+            in_play = [x for x in in_play if round_bet[x] > lowest_common_bet]
+            bets = [round_bet[x] - lowest_common_bet for x in in_play]
+            round_bet = {x:round_bet[x] - lowest_common_bet for x in round_bet.keys() if round_bet[x] > lowest_common_bet}
 
-        if (len(sidepot) == 0):
-            return [(sum(bets), in_play)]
-
-        main_pot, main_pot_players = sidepot[0]
-        sidepot[0] = (leftover_bets + main_pot, main_pot_players)
+        return pot
 
     def playHand(self):
         
@@ -96,8 +86,7 @@ class GameObject(object):
         
 
         # Keep track of main and sidepots
-        self.pot = [(0, in_play)]
-        current_pot = 0
+        pot = [(0, in_play)]
 
         # Starts hand
         for i in range(4):
@@ -109,7 +98,7 @@ class GameObject(object):
 
             while current_player_id != last_bet_player_id or round_bet[last_bet_player_id] == self.blinds:
                 
-                # TODO: skip player's turn if they have zero chips but are still in play i.e. have already all in
+                # Skip player's turn if they have zero chips but are still in play i.e. have already all-ined.
                 if round_bet[current_player_id] != 0 and self.players[current_player_id].chips == 0:
                     current_player_id = in_play[(in_play.index(current_player_id) + 1) % len(in_play)]
                     continue
@@ -120,11 +109,14 @@ class GameObject(object):
                 # Move pointer when current player does not fold and not an all in
                 next_pointer = in_play.index(current_player_id) + int(action != -1)
 
-                if action == -1 :
+                if action == -1 or (action < toCall and action != self.players[current_player_id].chips):
                     in_play.remove(current_player_id)
                 else:
-                    current_pot += action
                     round_bet[current_player_id] += action
+
+                    if action < toCall:
+                        leftover_bets = sum([round_bet[x] for x in round_bet.keys if x not in in_play])
+
 
                     # If raise, set this bet round to end with current player.
                     if round_bet[current_player_id] > round_bet[last_bet_player_id]:
@@ -139,9 +131,7 @@ class GameObject(object):
             if len(in_play) == 1: break
             # Update eligible players for current pot
 
-            self.createSidePots(round_bet, in_play)
-
-            self.pot[-1] = (current_pot, in_play)
+            pot = self.createSidePots(round_bet, in_play)
 
             print('Round %d ended\n' % (i+1))
 
