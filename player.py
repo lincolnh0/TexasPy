@@ -17,6 +17,9 @@ class Player(object):
     def setHand(self, hand):
         self.hand = hand
 
+    def adjustChips(self, amount):
+        self.chips += amount
+
     def getAction(self, toCall, tableCards):
         """ 
         Returns integer:

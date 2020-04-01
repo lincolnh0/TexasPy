@@ -57,7 +57,7 @@ class GameObject(object):
             lowest_common_bet = min(bets)
 
             # Get bets from folded player that are up for grabs this turn
-            leftover_bets = lowest_common_bet * len([x for x in round_bet.keys() if x not in in_play and round_bet[x] >= lowest_common_bet])
+            leftover_bets = sum([min(round_bet[x], lowest_common_bet) for x in round_bet.keys() if x not in in_play])
             pot.append((leftover_bets + lowest_common_bet * len(in_play), in_play))
 
 
@@ -114,10 +114,6 @@ class GameObject(object):
                 else:
                     round_bet[current_player_id] += action
 
-                    if action < toCall:
-                        leftover_bets = sum([round_bet[x] for x in round_bet.keys if x not in in_play])
-
-
                     # If raise, set this bet round to end with current player.
                     if round_bet[current_player_id] > round_bet[last_bet_player_id]:
                         last_bet_player_id = current_player_id
@@ -127,14 +123,34 @@ class GameObject(object):
 
                 current_player_id = in_play[next_pointer % len(in_play)]
                 
-            
-            if len(in_play) == 1: break
             # Update eligible players for current pot
-
-            pot = self.createSidePots(round_bet, in_play)
+            pot = self.createSidePots(round_bet, list(in_play))
+            
+            # Let last standing player collect pot
+            if len(in_play) == 1: break
 
             print('Round %d ended\n' % (i+1))
 
             # Deals table card once betting is finished
             self.dealTable()
-            
+        else:
+            self.getWinner(pot, in_play)
+
+
+    
+        total_pot = sum([p[0] for p in pot])
+        self.players[in_play[0]].adjustChips(total_pot)
+        print('%s collects %d from the pot' % (self.players[in_play[0]].name, total_pot))
+
+    def getWinner(self, pot, in_play):
+        player_score = defaultdict(list)
+        for player_id in in_play:
+            hand, score = poker.returnHandScore(self.table + self.players[player_id].hand)
+            player_score[score] += [player_id]
+            print('%s has a %s' % (self.players[player_id].name, poker.returnHandName(score)))
+            print(hand)
+        
+        for index, (sidepot, players) in enumerate(pot):
+            winner = player_score[max(player_score)]
+            print(winner)
+            # print('%s wins %d from Pot #%d' % (self.players[winner].name, index + 1))
