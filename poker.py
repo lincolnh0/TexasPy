@@ -123,13 +123,14 @@ def returnTwoPairs(hand):
                 if not i in pairs: pairs.append(i)
     if len(pairs) >= 2:
         pairs.sort(reverse=True)
-        h1 = list(filter(lambda x: x%13 == pairs[0], hand))
-        h2 = list(filter(lambda x: x%13 == pairs[1], hand))
+        h1 = list(filter(lambda x: x%13 == pairs[0], hand))[:2]
+        h2 = list(filter(lambda x: x%13 == pairs[1], hand))[:2]
         return (True, (h1+h2))
     return (False,0)
 
 def returnThreeOfAKind(hand):
     newHand = list(map(lambda x: x % 13,hand))
+    newHand.sort(reverse=True)
     for i in newHand:
         if newHand.count(i) >= 3: return (True,list(filter(lambda x: x%13 == i, hand)))
 
