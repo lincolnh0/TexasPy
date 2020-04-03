@@ -9,7 +9,7 @@ class Player(object):
         self.hand = []
 
     def __repr__(self):
-        return repr((self.name, self.hand, self.chips))
+        return repr((self.name, int(self.chips)))
 
     def setId(self, id):
         self.id = id
@@ -17,8 +17,6 @@ class Player(object):
     def setHand(self, hand):
         self.hand = hand
 
-    def adjustChips(self, amount):
-        self.chips += amount
 
     def getAction(self, toCall, tableCards):
         """ 
@@ -27,10 +25,10 @@ class Player(object):
         0: check
         >: call/bet/raise
         """
-        print('\n%s\'s turn -- %d to call' % (self.name, toCall))
+        print('%s\'s turn -- %d to call' % (self.name, toCall))
         print('Hand: ' , poker.returnCardStringShort(self.hand))
-        self.action = input('Please enter your value: ')
-        return int(self.action), int(self.action == self.chips)
+        action = input('Please enter your value: ')
+        return min(int(action), self.chips)
 
     def setAction(self, value):
         self.action = value
