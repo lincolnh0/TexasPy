@@ -208,4 +208,4 @@ class GameObject(object):
     def broadcastAction(self, message):
         ''' Broadcasts actions, winnings and chips count of players '''
         for player in self.players.items():
-            player.setRecord(message)
+            player.setRecord([message])
