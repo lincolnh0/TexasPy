@@ -44,7 +44,7 @@ class GameObject(object):
         # Deal two cards to each player
         for id, player in self.players.items():
             start_index = 2 * id
-            player.setHand(self.deck[start_index: start_index+ 2])
+            player.hand = self.deck[start_index: start_index + 2]
         
         # Remove dealt cards from deck
         self.deck = self.deck[len(self.players) * 2:]
@@ -56,7 +56,6 @@ class GameObject(object):
         elif len(self.table) < 5:
             self.table = self.deck[:len(self.table) + 1]
         
-
     def createSidePots(self, round_bet, in_play):
         ''' Creates side pots from (amount, [eligible players]) list. '''
         pot = []
@@ -130,11 +129,12 @@ class GameObject(object):
                 if action == -1 or (action < to_call and action != self.players[current_player_id].chips):
                     next_pointer = in_play.index(current_player_id) 
                     in_play.remove(current_player_id)
+                    self.broadcastAction(('BETS', self.players[current_player_id].name, -1))
                 else:
                     self.players[current_player_id].chips -= action
                     round_bet[current_player_id] += action
                     next_pointer = in_play.index(current_player_id) + 1
-
+                    self.broadcastAction(('BETS', self.players[current_player_id].name, action))
                     # Reverse all checked flags if current player has betted
                     all_checked = action == 0 and all_checked
 
@@ -164,7 +164,6 @@ class GameObject(object):
         
         self.getWinner(pot)
 
-
     def getWinner(self, pot):
         ''' Identify winners and dsitribute pots. '''
         for index, (sidepot, players) in enumerate(pot):
@@ -193,6 +192,7 @@ class GameObject(object):
                 winner = tie_break_score[max(tie_break_score)]
 
                 for player_id in winner:
+                    self.broadcastAction(('WINNER', self.players[player_id].name, max(player_score)))
                     self.players[player_id].chips += int(sidepot / len(winner))
                     print('%s wins %d from Pot #%d' % (self.players[player_id].name, int(sidepot / len(winner)), index + 1))
                 
@@ -204,3 +204,8 @@ class GameObject(object):
         ''' Simple output of current player's chip count. '''
         for player in self.players.values():
             print(player)
+
+    def broadcastAction(self, message):
+        ''' Broadcasts actions, winnings and chips count of players '''
+        for player in self.players.items():
+            player.setRecord(message)

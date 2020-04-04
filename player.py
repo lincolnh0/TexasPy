@@ -7,16 +7,10 @@ class Player(object):
         self.name = name
         self.chips = chips
         self.hand = []
+        self.record = []
 
     def __repr__(self):
         return repr((self.name, int(self.chips)))
-
-    def setId(self, id):
-        self.id = id
-
-    def setHand(self, hand):
-        self.hand = hand
-
 
     def getAction(self, toCall, tableCards):
         """ 
@@ -30,11 +24,8 @@ class Player(object):
         action = input('Please enter your value: ')
         return min(int(action), self.chips)
 
-    def setAction(self, value):
-        self.action = value
-
-    def setRecord(self, action):
-        pass
+    def setRecord(self, message):
+        self.record += message
 
     
 
