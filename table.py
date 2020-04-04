@@ -8,11 +8,18 @@ class GameObject(object):
     TABLE_CARDS_NAME = ['FLOP', 'TURN', 'RIVER']
 
     def __init__(self, players, blinds, ante=0):
+        ''' Initialise with list of players, initial blinds and optional ante. '''
         self.players = {id:player for id, player in enumerate(players)}
         self.blinds = blinds
+        self.ante = ante
         self.dealer = -1
 
+    def __repr__(self):
+        ''' Prints the players on this table. '''
+        return repr(self.players)
+
     def run(self, count):
+        ''' Run the specified number of games. '''
         for i in range(count):
             print('\n------ GAME NO. %d ------' % (i + 1))
             self.setup()
@@ -51,6 +58,7 @@ class GameObject(object):
         
 
     def createSidePots(self, round_bet, in_play):
+        ''' Creates side pots from (amount, [eligible players]) list. '''
         pot = []
         
         # Get all the bets of the in play players
@@ -76,7 +84,7 @@ class GameObject(object):
         return pot
 
     def playHand(self):
-        
+        ''' Execute a single hand of poker. '''
         # Setup players in play and rotate table
         # Ids of in-play players
         in_play = deque(self.players.keys())
@@ -84,6 +92,9 @@ class GameObject(object):
 
         small_blind = in_play[-2]
         big_blind = in_play[-1]
+
+        for player in self.players:
+            player.chips -= self.ante
 
         self.players[small_blind].chips -= self.blinds / 2
         self.players[big_blind].chips -= self.blinds
@@ -155,6 +166,7 @@ class GameObject(object):
 
 
     def getWinner(self, pot):
+        ''' Identify winners and dsitribute pots. '''
         for index, (sidepot, players) in enumerate(pot):
             # Stores player hands score in dictionary {score: [(player_id, hand_sum_for_tie_break)]}        
             player_score = defaultdict(list)
@@ -189,5 +201,6 @@ class GameObject(object):
                 print('%s wins %d from Pot #%d' % (self.players[winner[0][0]].name, sidepot, index + 1))
     
     def getPlayerSummary(self):
+        ''' Simple output of current player's chip count. '''
         for player in self.players.values():
             print(player)
