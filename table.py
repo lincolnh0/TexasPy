@@ -116,7 +116,6 @@ class GameObject(object):
             # 3. Big blind gets to check the first round
             while current_player_id != last_bet_player_id or all_checked or (i == 0 and current_player_id == big_blind):
                 
-                print('\nTABLE CARDS: ' , poker.returnCardStringShort(self.table))
                 # Skip player's turn if they have zero chips but are still in play i.e. have already all-ined.
                 if round_bet[current_player_id] != 0 and self.players[current_player_id].chips == 0:
                     current_player_id = in_play[(in_play.index(current_player_id) + 1) % len(in_play)]
