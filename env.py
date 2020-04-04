@@ -1,299 +1,215 @@
-import numpy as np
-import scipy
 from random import shuffle
-import random
+from collections import defaultdict, deque
 
-import player, poker
-
-# TODO: Add betting records for players
-#       Check if player can afford blinds / all in mechanisms
+import poker
 
 class GameObject(object):
-    """Game Object"""
-    def __init__(self, listOfPlayers,startChips):
+    
+    TABLE_CARDS_NAME = ['FLOP', 'TURN', 'RIVER']
 
-        self.players = listOfPlayers
-        self.blinds = startChips / 20
-        self.dealer = self.players[0]
-        self.playerChips = {}
-        for p in self.players: self.playerChips[p] = startChips
-        self.playerCount = len(self.players)
+    def __init__(self, players, blinds, ante=0):
+        ''' Initialise with list of players, initial blinds and optional ante. '''
+        self.players = {id:player for id, player in enumerate(players)}
+        self.blinds = blinds
+        self.ante = ante
+        self.dealer = -1
 
-    def runGame(self,count):
+    def __repr__(self):
+        ''' Prints the players on this table. '''
+        return repr(self.players)
+
+    def run(self, count):
+        ''' Run the specified number of games. '''
         for i in range(count):
-            self.setupRound()
-            self.runRound()
+            print('\n------ GAME NO. %d ------' % (i + 1))
+            self.setup()
+            self.playHand()
 
-    def setupRound(self):
-        # Reset Cards
-        self.playerCards = {}
-        for p in self.players:
-            self.playerCards[p] =[0,0]
-            p.setBlinds(self.blinds)
+            print('\n------QUICK SUMMARY------')
+            self.getPlayerSummary()
 
-        self.dealer = self.players[(self.players.index(self.dealer) + 1) % len(self.players)]
-        self.activePlayers = list(self.players)
-        self.deck = [i for i in range(52)]
-        self.record = []
-        self.shuffleCards()
+    def setup(self):
+        ''' Performs initial set up of a new hand. '''
+        # Update dealer, collect blinds / antes
+        self.dealer = (self.dealer + 1) % len(self.players)
+
+        # Clear player hands, community cards and pot
         self.table = []
-        self.pot = 0
+        self.pot = []
 
-    def shuffleCards(self):
-        riffle = random.randint(1,5)
-        for i in range(riffle):
-            shuffle(self.deck)
-        cut = random.randint(10,40)
-        for i in range(cut):
-            self.deck.append(self.deck.pop(0))
+        # Shuffle cards
+        self.deck = list(range(52))
+        shuffle(self.deck)
 
-    def runRound(self):
-        rRecord = []
+        # Deal two cards to each player
+        for id, player in self.players.items():
+            start_index = 2 * id
+            player.hand = self.deck[start_index: start_index + 2]
+        
+        # Remove dealt cards from deck
+        self.deck = self.deck[len(self.players) * 2:]
+
+    def dealTable(self):
+        ''' Store the first n cards of the remaining deck as community cards '''
+
+        if len(self.table) == 0:
+            print('\n------DEALING THE %s------' % (self.TABLE_CARDS_NAME[0]))
+            self.table = self.deck[:3]
+        elif len(self.table) < 5:
+            print('\n------DEALING THE %s------' % (self.TABLE_CARDS_NAME[len(self.table) - 2]))
+            self.table = self.deck[:len(self.table) + 1]
+        
+    def createSidePots(self, round_bet, in_play):
+        ''' Creates side pots from (amount, [eligible players]) list. '''
+        pot = []
+        
+        # Get all the bets of the in play players
+        bets = [round_bet[x] for x in in_play]
+
+        # While not all bets are equal
+        while (len(set(bets)) >= 1):
+
+            # Get lowest common bet
+            lowest_common_bet = min(bets)
+
+            # Get bets from folded player that are up for grabs this turn
+            leftover_bets = sum([min(round_bet[x], lowest_common_bet) for x in round_bet.keys() if x not in in_play])
+            pot.append((leftover_bets + lowest_common_bet * len(in_play), in_play))
 
 
-        self.dealPlayerCards()
+            # Update the remainging bets to be subtracted from the sidepot that was just generated
+            # And add them to the next sidepot generation only if they are greater than the one just now
+            in_play = [x for x in in_play if round_bet[x] > lowest_common_bet]
+            bets = [round_bet[x] - lowest_common_bet for x in in_play]
+            round_bet = {x:round_bet[x] - lowest_common_bet for x in round_bet.keys() if round_bet[x] > lowest_common_bet}
 
-        # Collect blinds
-        smallB = self.activePlayers[((self.activePlayers.index(self.dealer)) + len(self.activePlayers) - 2) % len(self.activePlayers)]
-        bigB = self.activePlayers[((self.activePlayers.index(self.dealer)) + len(self.activePlayers) - 1) % len(self.activePlayers)]
-        print("----Blinds %d/%d----" % (self.blinds / 2, self.blinds))
+        return pot
 
-        self.addPlayerChips(smallB, -(self.blinds / 2))
-        self.addPlayerChips(bigB, - self.blinds)
-        self.pot += self.blinds * 1.5
+    def playHand(self):
+        ''' Execute a single hand of poker. '''
+        # Setup players in play and rotate table
+        # Ids of in-play players
+        in_play = deque(self.players.keys())
+        in_play.rotate(-self.dealer)
 
-        self.sidepot = {}
+        # Setup blinds, ante and initial pot
+        small_blind = in_play[-2]
+        big_blind = in_play[-1]
 
+        for player_id in in_play:
+            self.players[player_id].chips -= self.ante
 
-        # Four rounds of betting
+        self.players[small_blind].chips -= self.blinds / 2
+        self.players[big_blind].chips -= self.blinds
+
+        pot = [(self.blinds * 1.5, in_play)]
+
+        # Set up round bet records
+        round_bet = defaultdict(int)
+        round_bet[small_blind] = self.blinds / 2
+        round_bet[big_blind] = self.blinds
+        
+        # Starts hand
         for i in range(4):
-            print("---BETTING ROUND %d---" % (i+1))
-            print("Table Cards are %s" % poker.returnCardStringShort(self.table))
-            curBet = self.blinds if i == 0 else 0
 
-            betted = {}
-            for p in self.activePlayers:
-                betted[p] = 0
+            current_player_id = in_play[0]
+            last_bet_player_id = in_play[-1]
+            all_checked = True
 
-            roundRecord = []
+            # Three conditions
+            # 1. Current player is not the one who last betted
+            # 2. Everyone before has checked
+            # 3. Big blind gets to check the first round
+            while current_player_id != last_bet_player_id or all_checked or (i == 0 and current_player_id == big_blind):
+                
+                # Skip player's turn if they have zero chips but are still in play i.e. have already all-ined.
+                if round_bet[current_player_id] != 0 and self.players[current_player_id].chips == 0:
+                    current_player_id = in_play[(in_play.index(current_player_id) + 1) % len(in_play)]
+                    continue
 
-            curPlayer = self.dealer
+                to_call = round_bet[last_bet_player_id] - round_bet[current_player_id]
 
-            # When should the round finish, default set to the player before the dealer
-            loopFinish = bigB
+                pot_total = sum([x for x in round_bet.values()])
+                action = self.players[current_player_id].getAction(to_call, self.table, pot_total)
 
-            # While the table is still enquiring each player, ask for their bet
-            # If all in, create potential side pot
-            # If less than zero (i.e. folding), remove them from the list of active players
-            # if greater or equak, update currentBet (if necessary), set last to to bet as the previous player
-            # Add betting amout to pot
-
-            # roundRecord => printing in real time
-            # rRecord => for player
-            while True:
-                if i == 0:
-                    betted[smallB] = self.blinds / 2
-                    betted[bigB] = self.blinds
-
-                betToMatch = (int)(curBet-betted[curPlayer])
-                pBet = self.getBetFromPlayer(curPlayer, betToMatch)
-
-
-                if pBet < 0: # if player folds
-                    rRecord.append((curPlayer.returnName(),-1))
-                    roundRecord.append("%s folds" % (curPlayer.returnName()))
+                if action == -1 or (action < to_call and action != self.players[current_player_id].chips):
+                    next_pointer = in_play.index(current_player_id) 
+                    in_play.remove(current_player_id)
+                    self.broadcastAction(('BETS', self.players[current_player_id].name, -1))
                 else:
+                    self.players[current_player_id].chips -= action
+                    round_bet[current_player_id] += action
+                    next_pointer = in_play.index(current_player_id) + 1
+                    self.broadcastAction(('BETS', self.players[current_player_id].name, action))
+                    # Reverse all checked flags if current player has betted
+                    all_checked = action == 0 and all_checked
 
+                    # If raise, set this bet round to end with current player.
+                    if round_bet[current_player_id] > round_bet[last_bet_player_id]:
+                        last_bet_player_id = current_player_id
+                    
+                # Terminates this round when the last player has also checked.
+                if all_checked and current_player_id == last_bet_player_id:
+                    break
+                if i == 0 and action == 0 and current_player_id == big_blind:
+                    break
 
-                    # Try to implement all in verification only when pBet < betToMatch
-                    # Because all inning with enough chips is the same as normal betting
-                    # Then extend the side pot mechanics to blinds as well
+                current_player_id = in_play[next_pointer % len(in_play)]
+                to_call = round_bet[last_bet_player_id] - round_bet[current_player_id]
+                
+            # Update eligible players for current pot
+            pot = self.createSidePots(round_bet, list(in_play))
+            
+            # Let last standing player collect pot
+            if len(in_play) == 1: break
 
+            # Deals table card once betting is finished
+            self.dealTable()
+        
+        self.getWinner(pot)
 
-                    # Idea for adding players to all available sidepots:
-                    # for each sidepot, cycle betted for each player, those who betted more than that amount is added to the pot.
+    def getWinner(self, pot):
+        ''' Identify winners and dsitribute pots. '''
+        for index, (sidepot, players) in enumerate(pot):
+            # Stores player hands score in dictionary {score: [(player_id, hand_sum_for_tie_break)]}        
+            player_score = defaultdict(list)
+            for player_id in players:
+                hand, score = poker.returnHandScore(self.table + self.players[player_id].hand)
 
-                    # If a player goes all in
-                    if pBet < betToMatch:
-                        if self.verifyAllIn(curPlayer,pBet):
-                            verb = ("goes all in with £%d" % (pBet))
-                            for k in self.sidepot.keys():    # add player to all sidepots that they are eligible to enter
-                                if pBet >= k:
-                                    self.sidepot[k].append(curPlayer)
+                # Append results to existing list of players with same score
+                player_score[score] += [(player_id, sum([x % 13 for x in hand]))]
 
-                            if pBet not in self.sidepot.keys(): # create a new sidepot if there isn't one with the current amount
-                                self.sidepot[pBet] = [curPlayer]
-                                for p in self.activePlayers:
-                                    if p != curPlayer and betted[p] >= pBet:
-                                        self.sidepot[pBet].append(p)
+                # Showdown only if more than one players
+                if len(players) > 1:
+                    print('%s has a %s' % (self.players[player_id].name, poker.returnHandName(score)))
+                    print(poker.returnCardStringShort(hand))
 
-                            curBet = pBet + betted[curPlayer]
+            # Winners are the ones with the highest score
+            winner = player_score[max(player_score)]
 
-                        else:
-                            pBet = betToMatch # if the player has the necessary chips but sets a bet lower than the currentBet, make it equal
+            # Tiebreak - rank by hand sum
+            if len(winner) > 1:
+                tie_break_score = defaultdict(list)
+                for (player_id, hand_sum) in winner:
+                    tie_break_score[hand_sum] += [player_id]
 
-                    if pBet == betToMatch: verb = "checks" if pBet == 0 else str("calls with £%d" % (pBet))
+                winner = tie_break_score[max(tie_break_score)]
 
-
-                    if pBet > betToMatch:
-                        loopFinish = self.activePlayers[(self.activePlayers.index(curPlayer) + len(self.activePlayers) - 1) % len(self.activePlayers)]
-                        verb = ("bets £%d" % (pBet)) if betToMatch == 0 else ("raises £%d" % ((pBet)))
-                        curBet = pBet + betted[curPlayer]
-
-                    roundRecord.append("%s %s" % (curPlayer.returnName(),verb))
-                    rRecord.append((curPlayer.returnName(),pBet))
-
-                    betted[curPlayer] += pBet
-
-
-
-                    self.pot += pBet
-                    self.addPlayerChips(curPlayer,-pBet)
-
-
-
-
-                if len(self.activePlayers) > 1:
-
-                    nextPlayer = self.activePlayers[(self.activePlayers.index(curPlayer) + 1) % len(self.activePlayers)]
-                if pBet == -1: self.activePlayers.remove(curPlayer)
-
-                rRecord.append((curPlayer.returnName(),curBet))
-                if curPlayer == loopFinish: break
-                curPlayer = nextPlayer
-
-
-
-            for r in roundRecord: print(r)
-            print("Pot has £%d" % (self.pot))
-            self.record.append(rRecord)
-            if len(self.activePlayers) == 1: break # end game early when all but one folds
-            self.dealTableCards()
-
-        if len(self.activePlayers) == 1: # if everyone else folds, the last player staning collects the pot
-            print('---------------------')
-            print('%s has won £%d' %(self.activePlayers[0].returnName(),self.pot))
-            self.addPlayerChips(self.activePlayers[0],self.pot)
-
-
-
-    def getBetFromPlayer(self,player,betToMatch):
-        player.setTableCards(self.table)
-        player.setAvailableChips(self.playerChips[player])
-        pBet = player.returnBet(betToMatch,self.record)
-        return pBet
-
-    def verifyAllIn(self,player,pBet):
-        if self.playerChips[player] == pBet:
-            return True
-
-        return False
-
-    def addPlayerChips(self,player,amount):
-        self.playerChips[player] += amount
-        player.setAvailableChips(self.playerChips[player])
-
-    def dealPlayerCards(self):
-        for i in range(2):
-            for j in self.players:
-                card = self.deck.pop(0)
-                self.playerCards[j][i] = card
-                j.setCards(card)
-
-
-    def dealTableCards(self):
-        """Deal flops, turn and river"""
-        if len(self.table) < 5:
-            self.deck.pop(0)
-            if(len(self.table) <3):
-                for i in range(3):self.table.append(self.deck.pop(0))
+                for player_id in winner:
+                    self.broadcastAction(('WINNER', self.players[player_id].name, max(player_score)))
+                    self.players[player_id].chips += int(sidepot / len(winner))
+                    print('%s wins %d from Pot #%d' % (self.players[player_id].name, int(sidepot / len(winner)), index + 1))
+                
             else:
-                self.table.append(self.deck.pop(0))
-        else:
-            self.endRound()
+                self.players[winner[0][0]].chips += sidepot
+                print('%s wins %d from Pot #%d' % (self.players[winner[0][0]].name, sidepot, index + 1))
+    
+    def getPlayerSummary(self):
+        ''' Simple output of current player's chip count. '''
+        for player in self.players.values():
+            print(player)
 
-    def endRound(self):
-        print("---Betting Ended---")
-        for i in self.players:
-            if i in self.activePlayers:
-                print("%s's hand: %s" % (i.returnName(),poker.returnCardStringShort(self.playerCards[i])))
-
-        print("Table's Card: ")
-        print(poker.returnCardStringShort(self.table))
-
-
-
-        if len(self.sidepot.keys()) == 0:   # If there is no sidepot
-            wP,wHand,wS = self.returnWinner(self.activePlayers)
-
-            print("%s has won with %s\nWinning Hand:%s" % (wP.returnName(),poker.returnHandName(wS),poker.returnCardStringShort(wHand)))
-            self.record[len(self.record) -1].append((wP.returnName(),-2))
-            self.addPlayerChips(wP,self.pot)
-        else:                               # If there exists > 0 sidepots
-            lastSidePot = 0
-            sortedKeys = sorted(self.sidepot.keys())
-            for k in sortedKeys:
-                wP,wHand,wS = self.returnWinner(self.sidepot[k])
-
-                self.addPlayerChips(wP,(k-lastSidePot) * len(self.sidepot[k]))
-                lastSidePot = k
-                if len(self.sidepot[k]) > 1:
-                    print("%s has won the £%d sidepot with %s\nWinning Hand:%s" % (wP.returnName(),k,poker.returnHandName(wS),poker.returnCardStringShort(wHand)))
-                else:
-                    print("£%d is returned to %s" % (k, wP.returnName()))
-
-        self.printChips()
-    def printChips(self):
-        print("----Chips Update----")
-        for p in self.players:
-            print("%s has £%d" % (p.returnName(),self.playerChips[p]))
-
-
-    '''Functions for determining winner and winning hand'''
-    def returnWinner(self, playerList):
-        'Returns Player Object, Winning Hand and Hand name'
-        maxScore = 0
-        winner = []
-        winningHand = []
-
-        # Compare scores of different players
-        for i in playerList:
-            tch = self.returnCombinedHand(i)
-            h,s = poker.returnHandScore(tch)
-            if s > maxScore:
-                winner = [i]
-                maxScore = s
-                winningHand = [h]
-            elif s == maxScore:
-                winner.append(i)
-                winningHand.append(h)
-
-        # return the winner if no tie
-        if len(winner) == 1: return i, winningHand[0], maxScore
-
-        # tie-breaking try 1: card values
-        cardValue = []
-        for w in winningHand:
-            cardValue.append(sum(list(map(lambda x: x% 13, w))))
-
-        return winner[cardValue.index(max(cardValue))], winningHand[cardValue.index(max(cardValue))], maxScore
-
-    def returnCombinedHand(self,playerID):
-        totalHand = list(self.table)
-        totalHand += self.playerCards[playerID]
-
-        return totalHand
-
-
-pList = []
-pList.append(player.Player("Jessica"))
-pList.append(player.StatsPlayer("Benjamin"))
-pList.append(player.Player("Lincoln"))
-pList.append(player.Player("Caleb"))
-pList.append(player.Player("Melody"))
-pList.append(player.Player("Melissa"))
-
-go = GameObject(pList,2000)
-go.runGame(1)
-#go.run()
-# hand = [0,1,2,3,4,5,6]
+    def broadcastAction(self, message):
+        ''' Broadcasts actions, winnings and chips count of players '''
+        for player in self.players.values():
+            player.setRecord(message)

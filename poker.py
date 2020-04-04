@@ -76,7 +76,7 @@ def returnHandName(score):
     if score == 0:
         return ("High Card")
     elif score == 1:
-        return ("A Pair")
+        return ("Pair")
     elif score == 2:
         return ("Two Pairs")
     elif score == 3:
