@@ -12,7 +12,7 @@ class Player(object):
     def __repr__(self):
         return repr((self.name, int(self.chips)))
 
-    def getAction(self, to_call, table_cards):
+    def getAction(self, to_call, table_cards, pot_size):
         """ 
         Returns integer:
         <: fold
@@ -20,6 +20,7 @@ class Player(object):
         >: call/bet/raise
         """
         print('\nTABLE CARDS: ' , poker.returnCardStringShort(table_cards))
+        print('CURRENT POT: %d' % (pot_size))
         print('%s\'s turn -- %d to call' % (self.name, to_call))
         print('Hand: ' , poker.returnCardStringShort(self.hand))
         action = input('Please enter your value: ')
