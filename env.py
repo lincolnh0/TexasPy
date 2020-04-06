@@ -3,7 +3,7 @@ from collections import defaultdict, deque
 
 import poker
 
-class GameObject(object):
+class Table(object):
     
     TABLE_CARDS_NAME = ['FLOP', 'TURN', 'RIVER']
 
@@ -27,6 +27,9 @@ class GameObject(object):
 
             print('\n------QUICK SUMMARY------')
             self.getPlayerSummary()
+
+
+            input('\n----[ENTER TO CONTINUE]----')
 
     def setup(self):
         ''' Performs initial set up of a new hand. '''
@@ -102,8 +105,6 @@ class GameObject(object):
         self.players[small_blind].chips -= self.blinds / 2
         self.players[big_blind].chips -= self.blinds
 
-        pot = [(self.blinds * 1.5, in_play)]
-
         # Set up round bet records
         round_bet = defaultdict(int)
         round_bet[small_blind] = self.blinds / 2
@@ -120,7 +121,7 @@ class GameObject(object):
             # 1. Current player is not the one who last betted
             # 2. Everyone before has checked
             # 3. Big blind gets to check the first round
-            while current_player_id != last_bet_player_id or all_checked or (i == 0 and current_player_id == big_blind):
+            while current_player_id != last_bet_player_id or all_checked or (round_bet[current_player_id] == self.blinds and i == 0 and current_player_id == big_blind):
                 
                 # Skip player's turn if they have zero chips but are still in play i.e. have already all-ined.
                 if round_bet[current_player_id] != 0 and self.players[current_player_id].chips == 0:
@@ -130,14 +131,20 @@ class GameObject(object):
                 to_call = round_bet[last_bet_player_id] - round_bet[current_player_id]
 
                 pot_total = sum([x for x in round_bet.values()])
-                action = self.players[current_player_id].getAction(to_call, self.table, pot_total)
-
+                in_play_names = [self.players[x].name for x in in_play if x != current_player_id]
+                print('\nTABLE CARDS: ' , poker.returnCardStringShort(self.table))
+                print('CURRENT POT: %d' % (pot_total))
+                print('%s\'s turn -- %d to call' % (self.players[current_player_id].name, to_call))
+                action = self.players[current_player_id].getAction(to_call, self.table, pot_total, in_play_names, self.blinds)
                 if action == -1 or (action < to_call and action != self.players[current_player_id].chips):
                     next_pointer = in_play.index(current_player_id) 
                     in_play.remove(current_player_id)
                     self.broadcastAction(('BETS', self.players[current_player_id].name, -1))
+                    print('%s folded' % self.players[current_player_id].name)
                 else:
                     self.players[current_player_id].chips -= action
+                    if action == 0: print('%s checked' % (self.players[current_player_id].name))
+                    if action > 0: print('%s betted %d' % (self.players[current_player_id].name, action))
                     round_bet[current_player_id] += action
                     next_pointer = in_play.index(current_player_id) + 1
                     self.broadcastAction(('BETS', self.players[current_player_id].name, action))
@@ -147,19 +154,22 @@ class GameObject(object):
                     # If raise, set this bet round to end with current player.
                     if round_bet[current_player_id] > round_bet[last_bet_player_id]:
                         last_bet_player_id = current_player_id
-                    
+
+                # Let last standing player collect pot
+                if len(in_play) == 1: break
+
                 # Terminates this round when the last player has also checked.
                 if all_checked and current_player_id == last_bet_player_id:
                     break
                 if i == 0 and action == 0 and current_player_id == big_blind:
                     break
-
+                
                 current_player_id = in_play[next_pointer % len(in_play)]
                 to_call = round_bet[last_bet_player_id] - round_bet[current_player_id]
-                
+
             # Update eligible players for current pot
             pot = self.createSidePots(round_bet, list(in_play))
-            
+                
             # Let last standing player collect pot
             if len(in_play) == 1: break
 
@@ -177,11 +187,11 @@ class GameObject(object):
                 hand, score = poker.returnHandScore(self.table + self.players[player_id].hand)
 
                 # Append results to existing list of players with same score
-                player_score[score] += [(player_id, sum([x % 13 for x in hand]))]
+                player_score[score] += [(player_id, poker.returnHandDigitSum(hand))]
 
                 # Showdown only if more than one players
                 if len(players) > 1:
-                    print('%s has a %s' % (self.players[player_id].name, poker.returnHandName(score)))
+                    print('%s has a %s' % (self.players[player_id].name, poker.returnHandName(hand, score)))
                     print(poker.returnCardStringShort(hand))
 
             # Winners are the ones with the highest score

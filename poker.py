@@ -36,10 +36,10 @@ def returnCardNumberLetter(id):
 
 def returnCardSuit(id):
     suit = id // 13
-    if suit == 0: return 'S' #"Spades"
-    if suit == 1: return 'H' #"Hearts"
-    if suit == 2: return 'C' #"Clubs"
-    if suit == 3: return 'D' #"Diamonds"
+    if suit == 0: return '\u2660' #"Spades"
+    if suit == 1: return '\u2665' #"Hearts"
+    if suit == 2: return '\u2663' #"Clubs"
+    if suit == 3: return '\u2666' #"Diamonds"
 
 def returnCardString(id):
     result = []
@@ -53,26 +53,7 @@ def returnCardStringShort(id):
         result.append("%s%s" % (returnCardSuit(i)[0],returnCardNumberLetter(i)))
     return result
 
-def returnCardId(*names):
-    output = []
-    hand = names[0]
-    for n in hand:
-        num = 0
-        suit, value = n[0], n[1]
-        if suit == 'H': num += 13
-        if suit == 'C': num += 26
-        if suit == 'D': num += 39
-        if value.isnumeric(): 
-            num += int(value) - 2
-        else:
-            if value == 'J': num += 9
-            if value == 'Q': num += 10
-            if value == 'K': num += 11
-            if value == 'A': num += 12
-        output.append(num)
-    return output
-
-def returnHandName(score):
+def returnHandName(hand, score):
     if score == 0:
         return ("High Card")
     elif score == 1:
@@ -90,10 +71,11 @@ def returnHandName(score):
     elif score == 7:
         return ("Four of a Kind")
     elif score == 8:
+        if hand[0] % 13 == 12: return ('Royal Flush')
         return ("Straight Flush")
 
 '''STATIC functions for checking hands'''
-def returnHighCard(hand,num):
+def returnHighCard(hand, num):
 
     newHand = list(map(lambda x: x % 13,hand))
     popped = []
@@ -238,3 +220,6 @@ def returnHandScore(totalHand):
     remain = list(set(totalHand) - set(hand))
     hand += returnHighCard(remain, 5-len(hand))
     return hand, score
+
+def returnHandDigitSum(hand):
+    return sum([x % 13 for x in hand])
