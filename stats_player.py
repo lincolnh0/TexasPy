@@ -23,13 +23,13 @@ class StatsPlayer(Player):
             opponent_possibilities = sum([len(x) for x in opponent_permutations.values()])
 
             hand, score = poker.returnHandScore(self.hand + table_cards)
-            hand_sum = poker.returnHandDigitSum(hand)
+            hand_sum = poker.returnHandDigitSum(hand, score)
             opponent_win_probability = sum([len(opponent_permutations[x]) / opponent_possibilities for x in opponent_permutations if x > score])
 
             # Tie-break evaluation
             for same_score_hand in opponent_permutations[score]:
                 tie_hand, tie_score = poker.returnHandScore(table_cards + list(same_score_hand))
-                tie_hand_sum = poker.returnHandDigitSum(tie_hand)
+                tie_hand_sum = poker.returnHandDigitSum(tie_hand, tie_score)
                 if tie_hand_sum > hand_sum:opponent_win_probability += 1 / opponent_possibilities
 
             # Scale probability to all opponents losing
@@ -54,8 +54,7 @@ class StatsPlayer(Player):
         return -1
 
     def getBetSize(self, win_probability, to_call, pot_size, blinds):
-        rounded_bet = (win_probability * pot_size // blinds) * blinds
-        bet = self.getMaxBet(to_call, (rounded_bet - to_call), blinds)
+        bet = self.getMaxBet(to_call, (win_probability * pot_size - to_call), blinds)
         return bet
 
     def getWinProbability(self, own_permutations, own_possibilities, opponent_permutations, opponent_possibilities):
@@ -69,7 +68,10 @@ class StatsPlayer(Player):
                     temp_opp_hand, _ = poker.returnHandScore
         
     def getMaxBet(self, to_call, intended_bet, blinds):
-        return int(max(to_call, min(intended_bet, self.chips) // blinds * blinds) )
+        if to_call < intended_bet:
+            return int(max(to_call, min(intended_bet, self.chips) // blinds * blinds))
+        else:
+            return int(min(to_call, min(intended_bet, self.chips) // blinds * blinds))
 
     def getPermutations(self, base_cards, cards_to_guess, excluded_cards=[]):
         ''' 

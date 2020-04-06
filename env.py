@@ -27,7 +27,11 @@ class Table(object):
 
             print('\n------QUICK SUMMARY------')
             self.getPlayerSummary()
-
+            
+            for player_id, player in self.players.items():
+                if player.chips <= 0: 
+                    input('\n%s has busted' % (player.name))
+            self.players = {id:player for id, player in self.players.items() if player.chips > 0}
 
             input('\n----[ENTER TO CONTINUE]----')
 
@@ -165,7 +169,7 @@ class Table(object):
                     break
                 
                 current_player_id = in_play[next_pointer % len(in_play)]
-                to_call = round_bet[last_bet_player_id] - round_bet[current_player_id]
+
 
             # Update eligible players for current pot
             pot = self.createSidePots(round_bet, list(in_play))
@@ -187,7 +191,7 @@ class Table(object):
                 hand, score = poker.returnHandScore(self.table + self.players[player_id].hand)
 
                 # Append results to existing list of players with same score
-                player_score[score] += [(player_id, poker.returnHandDigitSum(hand))]
+                player_score[score] += [(player_id, poker.returnHandDigitSum(hand, score))]
 
                 # Showdown only if more than one players
                 if len(players) > 1:

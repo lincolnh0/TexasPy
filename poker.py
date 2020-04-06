@@ -221,5 +221,13 @@ def returnHandScore(totalHand):
     hand += returnHighCard(remain, 5-len(hand))
     return hand, score
 
-def returnHandDigitSum(hand):
-    return sum([x % 13 for x in hand])
+def returnHandDigitSum(hand, score):
+    add_card_sum_hand = [
+        4, 5, 7, 8
+    ]
+    if score in add_card_sum_hand: return sum([x % 13 for x in hand])
+    if score == 1: return sum([x % 13 for x in hand[2:]]) + 100 * (hand[0] % 13) 
+    if score == 2: return hand[4] + 100 * ((hand[0] % 13) + (hand[2] % 13))
+    if score == 3: return sum(x % 13 for x in hand[3:]) + 100 * (hand[0] % 13) 
+    if score == 6: return 100 * (hand[0] % 13) + (hand[3] % 13)
+    if score == 0: return sum([x ** i for i, x in enumerate(hand)])
