@@ -184,6 +184,9 @@ class Table(object):
 
     def getWinner(self, pot):
         ''' Identify winners and dsitribute pots. '''
+
+        print('\n------ROUND ENDED------')
+
         for index, (sidepot, players) in enumerate(pot):
             # Stores player hands score in dictionary {score: [(player_id, hand_sum_for_tie_break)]}        
             player_score = defaultdict(list)

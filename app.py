@@ -12,11 +12,12 @@ def createPlayer(name, chips, player_type, args):
         return Player(name, chips)
     elif player_type == 'stats':
         alpha = float(args['alpha'])
-        return StatsPlayer(name, chips, alpha)
+        debug = bool(args['debug'])
+        return StatsPlayer(name, chips, alpha, debug)
 
 
 PLAYER_NAMES = [
-    'Alateron', 'Brachydios', 'Chameleos', 'Diablos', 'Eric', 'Fiona', 'Greg',
+    'Arrow', 'Justin', 'Kaidrian', 'Lincoln', 'Eric', 'Fiona', 'Greg',
     'Henry', 'Ivy', 'Jess', 'Klaus', 'Lincoln', 'Minnie', 'Naomi'
 ]
     
@@ -28,7 +29,8 @@ PLAYER_TYPES = {
 PLAYER_ARGS = {
     'manual': {},
     'stats': {
-        'alpha': 0.2,
+        'alpha': 0.15,
+        'debug': True
     }
 }
 CHIPS_DEFAULT = 400
@@ -48,7 +50,7 @@ if __name__ == '__main__':
         if chips == '': chips = CHIPS_DEFAULT
         args = dict(PLAYER_ARGS[player_type])
         for key in args:
-            placeholder = input('Please enter value for %s (%.3f): ' % (key, args[key]))
+            placeholder = input('Please enter value for %s (%s): ' % (key, str(args[key])))
             if placeholder != '': args[key] = placeholder
         player_list.append(createPlayer(name, chips, player_type, args))
         if len(player_list) > 1: create_player = input('Create another player? [Y/n]\n') != 'n'

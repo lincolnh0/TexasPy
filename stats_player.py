@@ -4,9 +4,10 @@ from collections import defaultdict, deque
 
 class StatsPlayer(Player):
 
-    def __init__(self, name, chips, alpha):
+    def __init__(self, name, chips, alpha, debug):
         super().__init__(name, chips)
-        self.alpha = float(alpha)
+        self.alpha = alpha
+        self.debug = debug
 
     def __repr__(self):
         return repr((self.name, self.chips, self.alpha))
@@ -34,8 +35,9 @@ class StatsPlayer(Player):
 
             # Scale probability to all opponents losing
             opponent_win_probability = 1 - (1 - opponent_win_probability) ** len(in_play_names)
-
-            print('Probability of losing: %f' % (opponent_win_probability))
+            if self.debug:
+                print(poker.returnCardStringShort(self.hand))
+                print('Probability of losing: %f' % (opponent_win_probability))
             
             if self.alpha >= opponent_win_probability or (to_call != 0 and to_call / pot_size <= self.alpha):
                 return self.getBetSize(1 - opponent_win_probability, to_call, pot_size, blinds)
@@ -54,10 +56,12 @@ class StatsPlayer(Player):
         return -1
 
     def getBetSize(self, win_probability, to_call, pot_size, blinds):
+        ''' Return appropriate bet size based on winning probability. '''
         bet = self.getMaxBet(to_call, (win_probability * pot_size - to_call), blinds)
         return bet
 
     def getWinProbability(self, own_permutations, own_possibilities, opponent_permutations, opponent_possibilities):
+        # TODO: Give purpose to this -> should be used to consider all permutations but would take > 4mil iterations
         probability = 0
         for score in range(9):
             probability += (len(own_permutations[score + 1] / own_possibilities)) * (len(opponent_permutations[score]) / opponent_possibilities)
@@ -68,6 +72,8 @@ class StatsPlayer(Player):
                     temp_opp_hand, _ = poker.returnHandScore
         
     def getMaxBet(self, to_call, intended_bet, blinds):
+        # Bet close to call value if player wants to bet less
+        # Bet intended value if it's greater than to call
         if to_call < intended_bet:
             return int(max(to_call, min(intended_bet, self.chips) // blinds * blinds))
         else:
