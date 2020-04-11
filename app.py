@@ -1,7 +1,9 @@
 import sys
-from env import Table
-from base_player import Player
-from stats_player import StatsPlayer
+from table.env import Table
+from player_type.base_player import Player
+from player_type.stats_player import StatsPlayer
+
+
 def runHands(players, count, blinds):
     table = Table(players, blinds)
 
