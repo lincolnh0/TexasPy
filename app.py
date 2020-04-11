@@ -12,7 +12,7 @@ def createPlayer(name, chips, player_type, args):
         return Player(name, chips)
     elif player_type == 'stats':
         alpha = float(args['alpha'])
-        debug = bool(args['debug'])
+        debug = args['debug']
         return StatsPlayer(name, chips, alpha, debug)
 
 

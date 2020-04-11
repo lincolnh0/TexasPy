@@ -4,6 +4,7 @@ import poker
 class Player(object):
     
     def __init__(self, name, chips):
+        chips = int(chips)
         self.name = name
         self.chips = chips
         self.hand = []

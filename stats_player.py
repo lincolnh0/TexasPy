@@ -7,14 +7,14 @@ class StatsPlayer(Player):
     def __init__(self, name, chips, alpha, debug):
         super().__init__(name, chips)
         self.alpha = alpha
-        self.debug = debug
+        self.debug = debug != '0' and debug.lower() != 'false'
 
     def __repr__(self):
         return repr((self.name, self.chips, self.alpha))
 
     def getAction(self, to_call, table_cards, pot_size, in_play_names, blinds):
-        
-        # print('Hand: ' , poker.returnCardStringShort(self.hand))
+        ''' Returns bet based on probability of winning '''
+        if self.debug: print('Hand: ' , poker.returnCardStringShort(self.hand))
         if len(table_cards) == 0:
             # Evaluate starting hand by pairs then card value
             return self.evaluateStartingHand(to_call, pot_size, blinds)
@@ -35,9 +35,7 @@ class StatsPlayer(Player):
 
             # Scale probability to all opponents losing
             opponent_win_probability = 1 - (1 - opponent_win_probability) ** len(in_play_names)
-            if self.debug:
-                print(poker.returnCardStringShort(self.hand))
-                print('Probability of losing: %f' % (opponent_win_probability))
+            if self.debug: print('Probability of losing: %f' % (opponent_win_probability))
             
             if self.alpha >= opponent_win_probability or (to_call != 0 and to_call / pot_size <= self.alpha):
                 return self.getBetSize(1 - opponent_win_probability, to_call, pot_size, blinds)
@@ -59,17 +57,6 @@ class StatsPlayer(Player):
         ''' Return appropriate bet size based on winning probability. '''
         bet = self.getMaxBet(to_call, (win_probability * pot_size - to_call), blinds)
         return bet
-
-    def getWinProbability(self, own_permutations, own_possibilities, opponent_permutations, opponent_possibilities):
-        # TODO: Give purpose to this -> should be used to consider all permutations but would take > 4mil iterations
-        probability = 0
-        for score in range(9):
-            probability += (len(own_permutations[score + 1] / own_possibilities)) * (len(opponent_permutations[score]) / opponent_possibilities)
-
-            for possible_own_hand in own_permutations[score]:
-                temp_own_hand, _ = poker.returnHandScore(self.hand + list(possible_own_hand))
-                for possible_opp_hand in opponent_permutations[score]:
-                    temp_opp_hand, _ = poker.returnHandScore
         
     def getMaxBet(self, to_call, intended_bet, blinds):
         # Bet close to call value if player wants to bet less

@@ -25,7 +25,7 @@ class Table(object):
             self.setup()
             self.playHand()
 
-            print('\n------QUICK SUMMARY------')
+            print('\n-------QUICK SUMMARY-------')
             self.getPlayerSummary()
             
             for player_id, player in self.players.items():
@@ -185,7 +185,7 @@ class Table(object):
     def getWinner(self, pot):
         ''' Identify winners and dsitribute pots. '''
 
-        print('\n------ROUND ENDED------')
+        print('\n-------ROUND ENDED-------')
 
         for index, (sidepot, players) in enumerate(pot):
             # Stores player hands score in dictionary {score: [(player_id, hand_sum_for_tie_break)]}        
