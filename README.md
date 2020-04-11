@@ -12,15 +12,19 @@ A modularly-built Texas Hold'em simulation in Python. Currently in a rebuild, pr
 
 Currently, the best way to run this program is to run <code>app.py</code> and follows the on-screen instructions.
 
-### Stats Player
-A player class that utilises statistics to decide its action. (In progress)
-
-### Manual Player
-Base palyer class whose actions are determined by the user. Action codes are as follows:
+### base_player.py
+Base palyer class whose actions are determined by user input. Action codes are as follows:
 
 - Fold: -1 or betting below to call value while having sufficient chips
 - Check: 0
 - Bet / Raise: > 0
+
+### stats_player.py
+A player class that utilises statistics to decide its action. 
+
+### bluff_player.py
+Extends stats_player, includes a random bluff factor. (In progress)
+
 
 ## Contribution
 
