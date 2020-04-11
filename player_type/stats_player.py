@@ -5,11 +5,13 @@ from collections import defaultdict, deque
 class StatsPlayer(Player):
 
     def __init__(self, name, chips, alpha, debug):
+        ''' Stats Player constructor. '''
         super().__init__(name, chips)
         self.alpha = alpha
         self.debug = debug != '0' and debug.lower() != 'false'
 
     def __repr__(self):
+        ''' String representation with alpha value. '''
         return repr((self.name, self.chips, self.alpha))
 
     def getAction(self, to_call, table_cards, pot_size, in_play_names, blinds):
@@ -37,12 +39,11 @@ class StatsPlayer(Player):
             opponent_win_probability = 1 - (1 - opponent_win_probability) ** len(in_play_names)
             if self.debug: print('Probability of losing: %f' % (opponent_win_probability))
             
-            if self.alpha >= opponent_win_probability or (to_call != 0 and to_call / pot_size <= self.alpha):
-                return self.getBetSize(1 - opponent_win_probability, to_call, pot_size, blinds)
-            elif to_call != 0: return -1
-        return to_call     
+        return self.getBetSize(opponent_win_probability, to_call, pot_size, blinds)
+ 
 
     def evaluateStartingHand(self, to_call, pot_size, blinds):
+        ''' Rough evaluation of starting hand '''
         # Any pair gets 12 points
         # Plus sum of both digits if > 24 * (1 - self.alpha)
         # Call or raise
@@ -53,13 +54,16 @@ class StatsPlayer(Player):
             return to_call
         return -1
 
-    def getBetSize(self, win_probability, to_call, pot_size, blinds):
+    def getBetSize(self, opponent_win_probability, to_call, pot_size, blinds):
         ''' Return appropriate bet size based on winning probability. '''
-        bet = self.getMaxBet(to_call, (win_probability * pot_size - to_call), blinds)
+        bet = 0
+        if self.alpha >= opponent_win_probability or (to_call != 0 and to_call / pot_size <= self.alpha):
+            bet = self.getMaxBet(to_call, (1 - opponent_win_probability) * (pot_size - to_call), blinds)
+        elif to_call != 0: bet = -1
         return bet
         
     def getMaxBet(self, to_call, intended_bet, blinds):
-        # Bet close to call value if player wants to bet less
+        # Call if player wants to bet less
         # Bet intended value if it's greater than to call
         if to_call < intended_bet:
             return int(max(to_call, min(intended_bet, self.chips) // blinds * blinds))
@@ -86,13 +90,3 @@ class StatsPlayer(Player):
                 hand, score = poker.returnHandScore(base_cards + [card])
                 probability_table[score] += [card]
         return probability_table
-
-    
-
-if __name__ == '__main__':
-    s = StatsPlayer('Annie', 1200, 0.2)
-    p_table = s.getPermutations([0, 1, 14, 36, 27], 2)
-    p_total = sum([len(x) for x in p_table.values()])
-
-    for key in p_table:
-        print(key, len(p_table[key]), len(p_table[key]) / p_total)

@@ -32,7 +32,7 @@ PLAYER_ARGS = {
     'manual': {},
     'stats': {
         'alpha': 0.15,
-        'debug': True
+        'debug': 'True'
     }
 }
 CHIPS_DEFAULT = 400
