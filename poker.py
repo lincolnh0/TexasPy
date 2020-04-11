@@ -173,25 +173,7 @@ def returnStraightFlush(hand):
     valid, hand = returnFlush(hand)
     if valid: return returnStraight(hand)
     return (valid, hand)
-    newHand = hand
-    spades = []
-    hearts = []
-    clubs = []
-    diamonds = []
-
-    for i in newHand:
-        if (i//13 == 0): spades.append(i)
-        if (i//13 == 1): hearts.append(i)
-        if (i//13 == 2): clubs.append(i)
-        if (i//13 == 3): diamonds.append(i)
-
-    if len(spades) >= 5: return returnStraight(spades)
-    if len(hearts) >= 5: return returnStraight(hearts)
-    if len(clubs) >= 5: return returnStraight(clubs)
-    if len(diamonds) >= 5: return returnStraight(diamonds)
-
-    return (False, [])
-
+    
 def returnHandScore(totalHand):
     '''Returns best 5 cards and hand score'''
     score = 0
