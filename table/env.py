@@ -194,7 +194,7 @@ class Table(object):
                 hand, score = poker.returnHandScore(self.table + self.players[player_id].hand)
 
                 # Append results to existing list of players with same score
-                player_score[score] += [(player_id, poker.returnHandDigitSum(hand, score))]
+                player_score[score] += [(player_id, poker.returnTieBreakScore(hand, score))]
 
                 # Showdown only if more than one players
                 if len(players) > 1:
