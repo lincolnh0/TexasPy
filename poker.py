@@ -92,9 +92,9 @@ def returnHighCard(hand, num):
 def returnPair(hand):
     newHand = list(map(lambda x: x % 13,hand))
     for i in newHand:
-        if newHand.count(i) >= 2: return (True,list(filter(lambda x: x%13 == i, hand)))
+        if newHand.count(i) >= 2: return (True, list(filter(lambda x: x%13 == i, hand)))
 
-    return (False,0)
+    return (False, [])
 
 def returnTwoPairs(hand):
     newHand = list(map(lambda x: x % 13,hand))
@@ -108,15 +108,15 @@ def returnTwoPairs(hand):
         h1 = list(filter(lambda x: x%13 == pairs[0], hand))[:2]
         h2 = list(filter(lambda x: x%13 == pairs[1], hand))[:2]
         return (True, (h1+h2))
-    return (False,0)
+    return (False, [])
 
 def returnThreeOfAKind(hand):
     newHand = list(map(lambda x: x % 13,hand))
     newHand.sort(reverse=True)
     for i in newHand:
-        if newHand.count(i) >= 3: return (True,list(filter(lambda x: x%13 == i, hand)))
+        if newHand.count(i) >= 3: return (True, list(filter(lambda x: x%13 == i, hand)))
 
-    return (False,0)
+    return (False, [])
 
 def returnFullHouse(hand):
     if returnTwoPairs(hand)[0] and returnThreeOfAKind(hand)[0]:
@@ -124,14 +124,14 @@ def returnFullHouse(hand):
 
         return (True, (returnThreeOfAKind(hand)[1] + pair))
 
-    return (False,0)
+    return (False, [])
 
 def returnFourOfAKind(hand):
     newHand = list(map(lambda x: x % 13,hand))
     for i in newHand:
-        if newHand.count(i) >= 4: return (True,list(filter(lambda x: x%13 == i, hand)))
+        if newHand.count(i) >= 4: return (True, list(filter(lambda x: x%13 == i, hand)))
 
-    return (False,0)
+    return (False, [])
 
 def returnFlush(hand):
     newHand = list(map(lambda x: x // 13,hand))
@@ -142,9 +142,9 @@ def returnFlush(hand):
                 if newHand[j] == i:
                     out.append(hand[j])
             out.sort(reverse=True)
-            return (True,out)
+            return (True, out)
 
-    return (False,0)
+    return (False, [])
 
 def returnStraight(hand):
     newHand = []
@@ -160,16 +160,19 @@ def returnStraight(hand):
                 out.append(newHand[i+1])
             else:
                 if len(out) >= 5:
-                    out.sort(key=lambda x:x[0],reverse=True)
-                    return (True,[i[1] for i in out][:5])
+                    out.sort(key=lambda x:x[0], reverse=True)
+                    return (True, [i[1] for i in out][:5])
                 out = [newHand[i+1]]
     if len(out) >= 5:
-        out.sort(key=lambda x:x[0],reverse=True)
-        return (True,[i[1] for i in out][:5])
+        out.sort(key=lambda x:x[0], reverse=True)
+        return (True, [i[1] for i in out][:5])
 
-    return (False,0)
+    return (False, [])
 
 def returnStraightFlush(hand):
+    valid, hand = returnFlush(hand)
+    if valid: return returnStraight(hand)
+    return (valid, hand)
     newHand = hand
     spades = []
     hearts = []
@@ -187,41 +190,25 @@ def returnStraightFlush(hand):
     if len(clubs) >= 5: return returnStraight(clubs)
     if len(diamonds) >= 5: return returnStraight(diamonds)
 
-    return (False, 0)
+    return (False, [])
 
 def returnHandScore(totalHand):
     '''Returns best 5 cards and hand score'''
     score = 0
     hand = []
-    if returnStraightFlush(totalHand)[0] :
-        score = 8
-        hand = returnStraightFlush(totalHand)[1]
-    elif returnFourOfAKind(totalHand)[0]:
-        score = 7
-        hand = returnFourOfAKind(totalHand)[1]
-    elif returnFullHouse(totalHand)[0]:
-        score = 6
-        hand = returnFullHouse(totalHand)[1]
-    elif returnFlush(totalHand)[0]:
-        score = 5
-        hand = returnFlush(totalHand)[1]
-    elif returnStraight(totalHand)[0]:
-        score = 4
-        hand = returnStraight(totalHand)[1]
-    elif returnThreeOfAKind(totalHand)[0]:
-        score = 3
-        hand = returnThreeOfAKind(totalHand)[1]
-    elif returnTwoPairs(totalHand)[0]:
-        score = 2
-        hand = returnTwoPairs(totalHand)[1]
-    elif returnPair(totalHand)[0]:
-        score = 1
-        hand = returnPair(totalHand)[1]
+
+    evaluation_list = [returnStraightFlush, returnFourOfAKind, returnFullHouse, returnFlush, returnStraight, returnThreeOfAKind, returnTwoPairs, returnPair]
+
+    for i, fn in enumerate(evaluation_list):
+        valid, hand = fn(totalHand)
+        if valid:
+            score = len(evaluation_list) - i
+            break
     remain = list(set(totalHand) - set(hand))
     hand += returnHighCard(remain, 5-len(hand))
     return hand, score
 
-def returnHandDigitSum(hand, score):
+def returnTieBreakScore(hand, score):
     add_card_sum_hand = [
         4, 5, 7, 8
     ]
