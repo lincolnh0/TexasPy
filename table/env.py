@@ -8,18 +8,24 @@ class Table(object):
     TABLE_CARDS_NAME = ['FLOP', 'TURN', 'RIVER']
 
     def __init__(self, players, blinds, ante=0):
-        ''' Initialise with list of players, initial blinds and optional ante. '''
+        ''' 
+        Initialise with list of players, initial blinds and optional ante. 
+        '''
         self.players = {id:player for id, player in enumerate(players)}
         self.blinds = blinds
         self.ante = ante
         self.dealer = -1
 
     def __repr__(self):
-        ''' Prints the players on this table. '''
+        ''' 
+        Prints the players on this table. 
+        '''
         return repr(self.players)
 
     def run(self, count):
-        ''' Run the specified number of games. '''
+        ''' 
+        Run the specified number of games. 
+        '''
         for i in range(count):
             print('\n------ GAME NO. %d ------' % (i + 1))
             self.setup()
@@ -36,7 +42,9 @@ class Table(object):
             input('\n----[ENTER TO CONTINUE]----')
 
     def setup(self):
-        ''' Performs initial set up of a new hand. '''
+        ''' 
+        Performs initial set up of a new hand. 
+        '''
         # Update dealer, collect blinds / antes
         self.dealer = (self.dealer + 1) % len(self.players)
 
@@ -57,7 +65,9 @@ class Table(object):
         self.deck = self.deck[len(self.players) * 2:]
 
     def dealTable(self):
-        ''' Store the first n cards of the remaining deck as community cards '''
+        ''' 
+        Store the first n cards of the remaining deck as community cards. 
+        '''
 
         if len(self.table) == 0:
             print('\n------DEALING THE %s------' % (self.TABLE_CARDS_NAME[0]))
@@ -67,7 +77,9 @@ class Table(object):
             self.table = self.deck[:len(self.table) + 1]
         
     def createSidePots(self, round_bet, in_play):
-        ''' Creates side pots from (amount, [eligible players]) list. '''
+        ''' 
+        Creates side pots from (amount, [eligible players]) list. 
+        '''
         pot = []
         
         # Get all the bets of the in play players
@@ -93,7 +105,9 @@ class Table(object):
         return pot
 
     def playHand(self):
-        ''' Execute a single hand of poker. '''
+        ''' 
+        Execute a single hand of poker. 
+        '''
         # Setup players in play and rotate table
         # Ids of in-play players
         in_play = deque(self.players.keys())
@@ -129,6 +143,7 @@ class Table(object):
                 
                 # Skip player's turn if they have zero chips but are still in play i.e. have already all-ined.
                 if round_bet[current_player_id] != 0 and self.players[current_player_id].chips == 0:
+                    if current_player_id == last_bet_player_id: break
                     current_player_id = in_play[(in_play.index(current_player_id) + 1) % len(in_play)]
                     continue
 
@@ -160,7 +175,12 @@ class Table(object):
                         last_bet_player_id = current_player_id
 
                 # Let last standing player collect pot
-                if len(in_play) == 1: break
+                if len(in_play) == 1: 
+                    # Update eligible players for current pot
+                    pot = self.createSidePots(round_bet, list(in_play))
+                    
+                    self.getWinner(pot)
+                    return
 
                 # Terminates this round when the last player has also checked.
                 if all_checked and current_player_id == last_bet_player_id:
@@ -173,9 +193,6 @@ class Table(object):
 
             # Update eligible players for current pot
             pot = self.createSidePots(round_bet, list(in_play))
-                
-            # Let last standing player collect pot
-            if len(in_play) == 1: break
 
             # Deals table card once betting is finished
             self.dealTable()
@@ -183,7 +200,9 @@ class Table(object):
         self.getWinner(pot)
 
     def getWinner(self, pot):
-        ''' Identify winners and dsitribute pots. '''
+        ''' 
+        Identify winners and dsitribute pots. 
+        '''
 
         print('\n-------ROUND ENDED-------')
 
@@ -222,11 +241,15 @@ class Table(object):
                 print('%s wins %d from Pot #%d' % (self.players[winner[0][0]].name, sidepot, index + 1))
     
     def getPlayerSummary(self):
-        ''' Simple output of current player's chip count. '''
+        ''' 
+        Simple output of current player's chip count. 
+        '''
         for player in self.players.values():
             print(player)
 
     def broadcastAction(self, message):
-        ''' Broadcasts actions, winnings and chips count of players '''
+        ''' 
+        Broadcasts actions, winnings and chips count of players. 
+        '''
         for player in self.players.values():
             player.setRecord(message)
