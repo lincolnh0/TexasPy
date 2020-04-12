@@ -1,5 +1,14 @@
 '''A collection of static methods used by both the environemnt and players to use'''
 
+POKER_SCORE_HIGH_CARD = 0
+POKER_SCORE_PAIR = 1
+POKER_SCORE_TWO_PAIRS = 2
+POKER_SCORE_THREE_OF_A_KIND = 3
+POKER_SCORE_STRAIGHT = 4
+POKER_SCORE_FLUSH = 5
+POKER_SCORE_FULL_HOUSE = 6
+POKER_SCORE_FOUR_OF_A_KIND = 7
+POKER_SCORE_STRAIGHT_FLUSH = 8
 
 ''' STATIC FUNCTIONS FOR CARD NAME FORMATTING'''
 def returnCardNumberText(id):
@@ -36,22 +45,16 @@ def returnCardNumberLetter(id):
 
 def returnCardSuit(id):
     suit = id // 13
-    if suit == 0: return '\u2660' #"Spades"
-    if suit == 1: return '\u2665' #"Hearts"
-    if suit == 2: return '\u2663' #"Clubs"
-    if suit == 3: return '\u2666' #"Diamonds"
+    if suit == 0: return '\u2660 Spades'
+    if suit == 1: return '\u2665 Hearts'
+    if suit == 2: return '\u2663 Clubs'
+    if suit == 3: return '\u2666 Diamonds'
 
 def returnCardString(id):
-    result = []
-    for i in id:
-        result.append("%s of %s" % (returnCardNumberText(i),returnCardSuit(i)))
-    return result
+    return ["%s of %s" % (returnCardNumberText(i),returnCardSuit(i)) for i in id]
 
 def returnCardStringShort(id):
-    result = []
-    for i in id:
-        result.append("%s%s" % (returnCardSuit(i)[0],returnCardNumberLetter(i)))
-    return result
+    return ["%s%s" % (returnCardSuit(i)[0],returnCardNumberLetter(i)) for i in id]
 
 def returnHandName(hand, score):
     if score == 0:
@@ -75,46 +78,43 @@ def returnHandName(hand, score):
         return ("Straight Flush")
 
 '''STATIC functions for checking hands'''
-def returnHighCard(hand, num):
+def returnHighCard(hand):
+    '''
+    Return cards in descending true value.
+    '''
 
-    newHand = list(map(lambda x: x % 13,hand))
-    popped = []
-    out = []
-    for i in range(num):
-        index = newHand.index(max(newHand))
-        if not index in popped:
-            out.append(hand[index])
-            newHand[index] = -10
-            popped.append(index)
+    # No need to consider duplicate keys because context, argument will never have pairs.
+    hand_dict = {x % 13: x for x in hand}
+    reversed_list = sorted(hand_dict.keys(), reverse=True)
 
-    return out
+    return [hand_dict[x] for x in reversed_list]
 
 def returnPair(hand):
-    newHand = list(map(lambda x: x % 13,hand))
-    for i in newHand:
-        if newHand.count(i) >= 2: return (True, list(filter(lambda x: x%13 == i, hand)))
+    new_hand = [x % 13 for x in hand]
+    for i in new_hand:
+        if new_hand.count(i) >= 2: return (True, [x for x in hand if x % 13 == i])
 
     return (False, [])
 
 def returnTwoPairs(hand):
-    newHand = list(map(lambda x: x % 13,hand))
+    new_hand = [x % 13 for x in hand]
     pairs = []
-    for i in newHand:
-        for j in newHand:
-            if i!=j and newHand.count(i) >= 2 and newHand.count(j) >= 2:
-                if not i in pairs: pairs.append(i)
+    for i in new_hand:
+        for j in new_hand:
+            if i!=j and new_hand.count(i) >= 2 and new_hand.count(j) >= 2:
+                if i not in pairs: pairs.append(i)
     if len(pairs) >= 2:
         pairs.sort(reverse=True)
-        h1 = list(filter(lambda x: x%13 == pairs[0], hand))[:2]
-        h2 = list(filter(lambda x: x%13 == pairs[1], hand))[:2]
-        return (True, (h1+h2))
+        h1 = [x for x in hand if x % 13 == pairs[0]][:2]
+        h2 = [x for x in hand if x % 13 == pairs[1]][:2]
+        return (True, (h1 + h2))
     return (False, [])
 
 def returnThreeOfAKind(hand):
-    newHand = list(map(lambda x: x % 13,hand))
-    newHand.sort(reverse=True)
-    for i in newHand:
-        if newHand.count(i) >= 3: return (True, list(filter(lambda x: x%13 == i, hand)))
+    new_hand = [x % 13 for x in hand]
+    new_hand.sort(reverse=True)
+    for i in new_hand:
+        if new_hand.count(i) >= 3: return (True, [x for x in hand if x % 13 == i])
 
     return (False, [])
 
@@ -127,42 +127,42 @@ def returnFullHouse(hand):
     return (False, [])
 
 def returnFourOfAKind(hand):
-    newHand = list(map(lambda x: x % 13,hand))
-    for i in newHand:
-        if newHand.count(i) >= 4: return (True, list(filter(lambda x: x%13 == i, hand)))
+    new_hand = [x % 13 for x in hand]
+    for i in new_hand:
+        if new_hand.count(i) >= 4: return (True, [x for x in hand if x % 13 == 1])
 
     return (False, [])
 
 def returnFlush(hand):
-    newHand = list(map(lambda x: x // 13,hand))
+    new_hand = [x // 13 for x in hand]
     out = []
-    for i in newHand:
-        if newHand.count(i) >= 5:
-            for j in range(len(newHand)):
-                if newHand[j] == i:
-                    out.append(hand[j])
+    for i in new_hand:
+        if new_hand.count(i) >= 5:
+            for index, value in enumerate(new_hand):
+                if value == i:
+                    out.append(hand[index])
             out.sort(reverse=True)
             return (True, out)
 
     return (False, [])
 
 def returnStraight(hand):
-    newHand = []
+    new_hand = []
     for h in hand:
-        newHand.append((h%13,h))
-        if (h%13 == 12): newHand.append((-1,h))
+        new_hand.append((h%13,h))
+        if (h%13 == 12): new_hand.append((-1,h))
 
-    newHand.sort(key=lambda x:x[0])
-    out = [newHand[0]]
-    for i in range(len(newHand) -1):
-        if (newHand[i+1][0] - newHand[i][0] != 0):
-            if(newHand[i+1][0] - newHand[i][0] == 1):
-                out.append(newHand[i+1])
+    new_hand.sort(key=lambda x:x[0])
+    out = [new_hand[0]]
+    for i in range(len(new_hand) -1):
+        if (new_hand[i+1][0] - new_hand[i][0] != 0):
+            if(new_hand[i+1][0] - new_hand[i][0] == 1):
+                out.append(new_hand[i+1])
             else:
                 if len(out) >= 5:
                     out.sort(key=lambda x:x[0], reverse=True)
                     return (True, [i[1] for i in out][:5])
-                out = [newHand[i+1]]
+                out = [new_hand[i+1]]
     if len(out) >= 5:
         out.sort(key=lambda x:x[0], reverse=True)
         return (True, [i[1] for i in out][:5])
@@ -174,29 +174,34 @@ def returnStraightFlush(hand):
     if valid: return returnStraight(hand)
     return (valid, hand)
     
-def returnHandScore(totalHand):
-    '''Returns best 5 cards and hand score'''
+def returnHandScore(total_hand):
+    '''
+    Returns top cards (max. 5) and hand score.
+    '''
     score = 0
     hand = []
 
     evaluation_list = [returnStraightFlush, returnFourOfAKind, returnFullHouse, returnFlush, returnStraight, returnThreeOfAKind, returnTwoPairs, returnPair]
 
     for i, fn in enumerate(evaluation_list):
-        valid, hand = fn(totalHand)
+        valid, hand = fn(total_hand)
         if valid:
             score = len(evaluation_list) - i
             break
-    remain = list(set(totalHand) - set(hand))
-    hand += returnHighCard(remain, 5-len(hand))
-    return hand, score
+    remain = list(set(total_hand) - set(hand))
+    hand += returnHighCard(remain)
+    return hand[:5], score
 
 def returnTieBreakScore(hand, score):
+    '''
+    Return a tiebreak score to each hand.
+    '''
     add_card_sum_hand = [
         4, 5, 7, 8
     ]
     if score in add_card_sum_hand: return sum([x % 13 for x in hand])
     if score == 1: return sum([x % 13 for x in hand[2:]]) + 100 * (hand[0] % 13) 
-    if score == 2: return hand[4] + 100 * ((hand[0] % 13) + (hand[2] % 13))
+    if score == 2: return hand[4] + 500 * (hand[0] % 13) + 10 * (hand[2] % 13)
     if score == 3: return sum(x % 13 for x in hand[3:]) + 100 * (hand[0] % 13) 
     if score == 6: return 100 * (hand[0] % 13) + (hand[3] % 13)
     if score == 0: return sum([x ** i for i, x in enumerate(hand)])

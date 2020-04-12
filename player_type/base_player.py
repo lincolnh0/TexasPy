@@ -4,6 +4,9 @@ import poker
 class Player(object):
     
     def __init__(self, name, chips):
+        '''
+        Base Player constructor.
+        '''
         chips = int(chips)
         self.name = name
         self.chips = chips
@@ -14,12 +17,12 @@ class Player(object):
         return repr((self.name, int(self.chips)))
 
     def getAction(self, to_call, table_cards, pot_size, in_play_names, blinds):
-        """ 
-        Returns integer:
-        <: fold
+        ''' 
+        Returns user input:
+        <: fold (unless all0in)
         0: check
         >: call/bet/raise
-        """
+        '''
         print('Hand: ' , poker.returnCardStringShort(self.hand))
         action = input('Please enter your value: ')
         return min(int(action), self.chips)
