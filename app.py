@@ -2,6 +2,7 @@ import sys
 from table.env import Table
 from player_type.base_player import Player
 from player_type.stats_player import StatsPlayer
+from player_type.bluff_player import BluffPlayer
 
 
 def runHands(players, count, blinds):
@@ -16,6 +17,12 @@ def createPlayer(name, chips, player_type, args):
         alpha = float(args['alpha'])
         debug = args['debug']
         return StatsPlayer(name, chips, alpha, debug)
+    elif player_type == 'bluff':
+        alpha = float(args['alpha'])
+        bluff_frequency = float(args['bluff_frequency'])
+        bluff_strength = float(args['bluff_strength'])
+        debug = args['debug']
+        return BluffPlayer(name, chips, alpha, bluff_frequency, bluff_strength, debug)
 
 
 PLAYER_NAMES = [
@@ -25,7 +32,8 @@ PLAYER_NAMES = [
     
 PLAYER_TYPES = {
     0: 'manual',
-    1: 'stats'
+    1: 'stats',
+    2: 'bluff'
 }
 
 PLAYER_ARGS = {
@@ -33,6 +41,12 @@ PLAYER_ARGS = {
     'stats': {
         'alpha': 0.15,
         'debug': 'True'
+    },
+    'bluff': {
+        'alpha': 0.2,
+        'debug': 'True',
+        'bluff_frequency': 0.3,
+        'bluff_strength': 0.5,
     }
 }
 CHIPS_DEFAULT = 400

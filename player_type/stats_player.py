@@ -58,6 +58,8 @@ class StatsPlayer(Player):
             # Number of possibile table + opponent combinations:
             # ~ 4 million after flop, 91080 after turn, 1980 after river.
             # Hence we are only estimating opponent cards with known information + adjusted score based on potential hand.
+            
+            '''
             if len(table_cards) != 5:
                 potential_hand_permutations = self.getPermutations(table_cards + self.hand, 5 - len(table_cards))
                 potential_hand_possibilities = sum([len(x) for x in potential_hand_permutations.values()])
@@ -67,7 +69,7 @@ class StatsPlayer(Player):
                 hand_promotion_probability = sum([(x - minimum_hand_score) * len(potential_hand_permutations[x]) / potential_hand_possibilities for x in potential_hand_permutations if x > minimum_hand_score]) 
                 opponent_win_probability -= hand_promotion_probability
                 if self.debug: print('Adjusted probability w.r.t. promotion: %f' % (opponent_win_probability))
-
+            '''
 
 
         return self.getBetSize(opponent_win_probability, to_call, pot_size, blinds)
