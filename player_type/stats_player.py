@@ -121,12 +121,12 @@ class StatsPlayer(Player):
                 if card_1 in (base_cards + excluded_cards): continue
                 for card_2 in range(card_1 + 1, 52):
                     if card_2 in (base_cards + excluded_cards): continue
-                    hand, score = poker.returnHandScore(base_cards + [card_1, card_2])
+                    _, score = poker.returnHandScore(base_cards + [card_1, card_2])
                     probability_table[score] += [(card_1, card_2)]
 
         elif cards_to_guess == 1:
             for card in range(52):
                 if card in (base_cards + excluded_cards): continue
-                hand, score = poker.returnHandScore(base_cards + [card])
+                _, score = poker.returnHandScore(base_cards + [card])
                 probability_table[score] += [card]
         return probability_table
