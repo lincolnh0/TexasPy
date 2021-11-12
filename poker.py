@@ -129,7 +129,7 @@ def returnFullHouse(hand):
 def returnFourOfAKind(hand):
     new_hand = [x % 13 for x in hand]
     for i in new_hand:
-        if new_hand.count(i) >= 4: return (True, [x for x in hand if x % 13 == 1])
+        if new_hand.count(i) >= 4: return (True, [x for x in hand if x % 13 == i])
 
     return (False, [])
 
@@ -201,7 +201,7 @@ def returnTieBreakScore(hand, score):
     ]
     if score in add_card_sum_hand: return sum([x % 13 for x in hand])
     if score == 1: return sum([x % 13 for x in hand[2:]]) + 100 * (hand[0] % 13) 
-    if score == 2: return hand[4] + 500 * (hand[0] % 13) + 10 * (hand[2] % 13)
+    if score == 2: return hand[4] + 500 * (hand[0] % 13) + 12 * (hand[2] % 13)
     if score == 3: return sum(x % 13 for x in hand[3:]) + 100 * (hand[0] % 13) 
     if score == 6: return 100 * (hand[0] % 13) + (hand[3] % 13)
     if score == 0: return sum([x ** i for i, x in enumerate(hand)])
